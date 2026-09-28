@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Plain .NET harness that compiles the UnityEngine-free half of the package
+       plus the unit tests. Run: dotnet test Tests/Pollinations.Tests.csproj -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <LangVersion>9.0</LangVersion>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Pure runtime sources (no UnityEngine anywhere in this list). -->
+    <Compile Include="../Runtime/Scripts/Internal/MiniJson.cs" Link="Runtime/MiniJson.cs" />
+    <Compile Include="../Runtime/Scripts/Internal/PollinationsTypes.cs" Link="Runtime/PollinationsTypes.cs" />
+    <Compile Include="../Runtime/Scripts/Internal/PollinationsClient.Core.cs" Link="Runtime/PollinationsClient.Core.cs" />
+    <Compile Include="../Runtime/Scripts/Internal/PollinationsTransport.cs" Link="Runtime/PollinationsTransport.cs" />
+    <Compile Include="../Runtime/Scripts/PollinationsModelCatalog.cs" Link="Runtime/PollinationsModelCatalog.cs" />
+    <Compile Include="../Runtime/Scripts/PollinationsModels.cs" Link="Runtime/PollinationsModels.cs" />
+    <Compile Include="../Runtime/Scripts/PollinationsAuth.cs" Link="Runtime/PollinationsAuth.cs" />
+    <!-- The Unity-facing partial (PollinationsClient.cs), demo and audio loader are
+         excluded: they need UnityEngine/UnityWebRequest. PollinationsClient.Core.cs
+         provides the rest of the partial class, so the pure tests still compile. -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+    <PackageReference Include="xunit" Version="2.7.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.7" />
+  </ItemGroup>
+
+</Project>

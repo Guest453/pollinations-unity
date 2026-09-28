@@ -1,0 +1,10 @@
+# C# / Unity build artifacts
+bin/
+obj/
+*.user
+.vs/
+.idea/
+
+# never commit secrets
+*.sk_*
+.env

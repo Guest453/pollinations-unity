@@ -1,0 +1,27 @@
+{
+  "name": "dev.guest453.pollinations-unity",
+  "displayName": "Pollinations for Unity",
+  "version": "1.0.0",
+  "unity": "2021.3",
+  "description": "Async C# helpers for Pollinations text, image and speech generation in Unity games. Bring-your-own-key for development and a device flow so players pay with their own Pollen.",
+  "author": {
+    "name": "Guest453",
+    "url": "https://github.com/Guest453"
+  },
+  "keywords": [
+    "pollinations",
+    "ai",
+    "text-generation",
+    "image-generation",
+    "text-to-speech",
+    "openai-compatible"
+  ],
+  "samples": [
+    {
+      "displayName": "Demo Scene",
+      "description": "Scene + UI panel demonstrating text, image and speech generation end to end.",
+      "path": "Samples~/DemoScene"
+    }
+  ],
+  "documentation": "README.md"
+}
