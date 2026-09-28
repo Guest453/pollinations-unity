@@ -210,20 +210,21 @@ the bearer token.
 
 ## Publishing to OpenUPM
 
-The package is already OpenUPM-shaped (`package.json` at the repo root, valid name
-`dev.guest453.pollinations-unity`, no external deps beyond Unity modules). To publish:
+The package is OpenUPM-shaped (`package.json` at the repo root, valid name
+`dev.guest453.pollinations-unity`, no external deps beyond Unity modules, versioned git
+tag). **A registration PR is already open: [openupm/openupm#7005](https://github.com/openupm/openupm/pull/7005)** —
+once merged (new hunters need maintainer approval, usually within 24h), the package is
+live and installable via the OpenUPM CLI:
 
-1. Fork or submit a package proposal at https://github.com/openupm/openupm-registry —
-   follow [their adding-a-package guide](https://openupm.com/docs/adding-upm-package.html).
-2. The registry needs a released git tag; create one:
-   ```bash
-   git tag 1.0.0 && git push origin 1.0.0
-   ```
-3. OpenUPM's CI builds the package in Unity, verifies the asmdefs resolve, and adds it to
-   the registry. After that, `openupm add dev.guest453.pollinations-unity` works for
-   everyone.
-4. Optional: enable the included GitHub Actions workflow (`.github/workflows/dotnet.yml`)
-   so the pure-test suite runs on every push.
+```bash
+openupm add dev.guest453.pollinations-unity
+```
+
+Manual process (if the PR needs redoing): fork `openupm/openupm`, add
+`data/packages/dev.guest453.pollinations-unity.yml` (copy the shape of any existing
+file there, e.g. `com.cysharp.unitask.yml`), and open a PR titled
+`chore(data): new package dev.guest453.pollinations-unity`. The registry's CI builds
+the package from the git tag and publishes it.
 
 ---
 
