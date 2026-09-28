@@ -1,5 +1,6 @@
 // PollinationsClient.Core — the pure, UnityEngine-free half of the client:
-// settings fields, token selection, request payload builders and response parsers.
+// settings fields, token selection, request payload builders, response parsers,
+// and the Task-based TextAsync/SpeechAsync calls (no Unity types needed).
 // Split out as a partial class so plain .NET test harnesses can compile and test it.
 // The Unity-facing half (Texture2D/AudioClip plumbing) lives in PollinationsClient.cs.
 using System;
@@ -130,7 +131,7 @@ namespace Pollinations.Unity
             if (Internal.MiniJson.Get(root, "usage") is IDictionary<string, object> usage)
             {
                 result.PromptTokens = Internal.MiniJson.GetNumber(usage, "prompt_tokens");
-                result.CompletionTokens = Internal.MiniJson.GetNumber(usage, "completion_tokens");
+                result.CompletionTokens = Internal.MiniJson.GetNumber(usage, "text_tokens") ?? Internal.MiniJson.GetNumber(usage, "completion_tokens");
             }
             return result;
         }
@@ -148,6 +149,63 @@ namespace Pollinations.Unity
                 if (b64 != null) return b64;
             }
             throw new PollinationsException("Image response contained no b64_json entry.");
+        }
+
+        // ---------------- Text (pure — works in Unity AND plain .NET) ----------------
+
+        /// <summary>POST /v1/chat/completions (OpenAI-compatible). Returns the assistant message plus usage.</summary>
+        public Task<TextResult> TextAsync(IList<ChatMessage> messages, string model = null, double? temperature = null, int? maxTokens = null)
+        {
+            var body = Internal.MiniJson.ToJson(BuildChatPayload(messages, model, temperature, maxTokens));
+            return SendJsonAsync("POST", GenBase + "/v1/chat/completions", body).ContinueWith(t =>
+            {
+                if (t.IsFaulted) throw t.Exception.InnerException ?? t.Exception;
+                return ParseChatResponse(t.Result);
+            }, TaskContinuationOptions.OnlyOnRanToCompletion);
+        }
+
+        /// <summary>One-shot convenience: system + user message → assistant reply.</summary>
+        public Task<TextResult> TextAsync(string systemPrompt, string userPrompt, string model = null)
+        {
+            var messages = new List<ChatMessage>
+            {
+                new ChatMessage("system", systemPrompt ?? ""),
+                new ChatMessage("user", userPrompt ?? "")
+            };
+            return TextAsync(messages, model);
+        }
+
+        // ---------------- Speech (pure — binary audio, no Unity types) ----------------
+
+        /// <summary>
+        /// POST /v1/audio/speech → binary audio bytes. Default wav (decodable in-memory in
+        /// Unity via GetAudioClip); pass mimeType "audio/mpeg" for mp3.
+        /// </summary>
+        public Task<SpeechResult> SpeechAsync(string text, string model = null, string voice = null, string mimeType = "audio/wav")
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return Task.FromException<SpeechResult>(new PollinationsException("SpeechAsync requires input text."));
+
+            var body = Internal.MiniJson.ToJson(BuildSpeechPayload(text, model, voice, mimeType));
+            var headers = Internal.PollinationsTransport.JsonHeaders(EffectiveToken, UserAgent, wantsBinary: true);
+            var usedModel = string.IsNullOrEmpty(model) ? SpeechModel : model;
+            var usedVoice = string.IsNullOrEmpty(voice) ? SpeechVoice : voice;
+
+            return Internal.PollinationsTransport.SendAsync(
+                new Internal.PollinationsRequest(GenBase + "/v1/audio/speech", "POST", body, headers),
+                Binary: true).ContinueWith(t =>
+            {
+                if (t.IsFaulted) throw t.Exception.InnerException ?? t.Exception;
+                var r = t.Result;
+                if (r.Status >= 400) throw PollinationsException.FromStatus((int)r.Status);
+                return new SpeechResult
+                {
+                    AudioBytes = r.Body,
+                    MimeType = string.IsNullOrEmpty(r.ContentType) ? mimeType : r.ContentType,
+                    Model = usedModel,
+                    Voice = usedVoice
+                };
+            }, TaskContinuationOptions.OnlyOnRanToCompletion);
         }
 
         // ---------------- Shared plumbing ----------------

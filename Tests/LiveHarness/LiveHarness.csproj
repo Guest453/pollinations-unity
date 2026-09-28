@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <LangVersion>9.0</LangVersion>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="**/*.cs" />
+    <!-- Same pure sources as the test project, plus this harness.
+         Note PollinationsClient.cs (Unity half) is excluded; the pure core partial
+         provides the rest of the client. -->
+    <Compile Include="../../Runtime/Scripts/Internal/MiniJson.cs" Link="Runtime/MiniJson.cs" />
+    <Compile Include="../../Runtime/Scripts/Internal/PollinationsTypes.cs" Link="Runtime/PollinationsTypes.cs" />
+    <Compile Include="../../Runtime/Scripts/Internal/PollinationsClient.Core.cs" Link="Runtime/PollinationsClient.Core.cs" />
+    <Compile Include="../../Runtime/Scripts/Internal/PollinationsTransport.cs" Link="Runtime/PollinationsTransport.cs" />
+    <Compile Include="../../Runtime/Scripts/PollinationsModelCatalog.cs" Link="Runtime/PollinationsModelCatalog.cs" />
+    <Compile Include="../../Runtime/Scripts/PollinationsModels.cs" Link="Runtime/PollinationsModels.cs" />
+    <Compile Include="../../Runtime/Scripts/PollinationsAuth.cs" Link="Runtime/PollinationsAuth.cs" />
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+
+</Project>

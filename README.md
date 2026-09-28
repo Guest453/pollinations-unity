@@ -175,32 +175,36 @@ the bearer token.
 
 ## What's verified vs. not (honesty section)
 
-**Verified in this repo (CI-reproducible):**
+**Verified in this repo (reproducible):**
 
-- ✅ The pure logic (JSON parse/serialize, chat/image payload builders, response parsers,
-  header construction, token selection, WAV decoding, device-flow state machine against a
-  fake transport) compiles and passes **36/36 xUnit tests** on .NET 8 — run
-  `dotnet test Tests/Pollinations.Tests.csproj`.
-- ✅ Package layout (`package.json`, asmdefs, Samples~ folder) follows the UPM structure
-  documented by Unity; JSON validity of `package.json` and both asmdefs is asserted by
-  the test suite and by `python3 -c "import json; json.load(...)"` in CI.
-- ✅ Endpoint shapes (`/v1/chat/completions`, `/v1/images/generations`,
-  `/v1/audio/speech`, `/text/models`, `/image/models`, `/audio/models`,
-  `/api/device/code`, `/api/device/token`) were captured from the live OpenAPI spec and
-  `BRING_YOUR_OWN_POLLEN.md` on 2026-09 and mirrored into the request builders, with
-  real-response fixtures baked into the tests.
+- ✅ **Live end-to-end generation through the package's own client code** —
+  [`Tests/LiveHarness`](Tests/LiveHarness/Program.cs) drives the real `PollinationsClient`
+  (payload builders → MiniJson serializer → HTTP → response parsers → WAV decoder) with an
+  HttpClient transport standing in for UnityWebRequest. Output from 2026-09-27:
+  - **Text** `POST /v1/chat/completions` → `gpt-5.4-nano-2026-03-17`, usage prompt=28 completion=10,
+    reply: *"Welcome players to the Unity demo!"*
+  - **Speech** `POST /v1/audio/speech` → 183,534 bytes `audio/wav` → decoded by the package's
+    `WavDecoder` to 91,728 samples, mono, 44,100 Hz
+  - **Image** `POST /v1/images/generations` → 47,327-byte image via the package's payload/parse path
+    (note: `z-image-turbo` returns **JPEG** bytes; `Texture2D.LoadImage` decodes both JPEG and PNG,
+    and `ImageResult.ImageBytes` reflects whatever the model returned)
+- ✅ **36/36 xUnit tests** on .NET 8 (`dotnet test Tests/Pollinations.Tests.csproj`): JSON
+  round-trips incl. surrogate pairs, chat/image parsers against real-response fixtures,
+  payload builders vs. the live OpenAPI schema, header/token selection, WAV decode +
+  rejection paths, device flow vs. scripted fake transport (granted / denied / slow_down /
+  pk_ validation).
+- ✅ Package layout follows UPM structure; `package.json` + both asmdefs validated as JSON.
+- ✅ Endpoint shapes captured from `gen.pollinations.ai/openapi.json` and
+  `BRING_YOUR_OWN_POLLEN.md` (2026-09).
 
 **Not verified here (no Unity editor in this environment):**
 
-- ⚠️ In-editor compilation of `PollinationsClient.cs`, `PollinationsAudio.cs`,
-  `PollinationsDemo.cs` (they reference `UnityEngine`/`UnityWebRequest` — the environment
-  has no Unity). These files follow the Unity 2021.3 scripting API
-  (`UnityWebRequest`, `UnityWebRequestMultimedia`, `Texture2D.LoadImage`,
-  `AudioClip.Create`) and mirror patterns from widely used Unity packages, but they have
-  not been compiled by a Unity compiler. If something doesn't compile in your Unity
-  version, please open an issue.
-- ⚠️ A live generation round-trip from inside Unity (the API itself was exercised with
-  curl, not from the Unity runtime).
+- ⚠️ Compilation of the three Unity-facing files (`PollinationsClient.cs` Unity half,
+  `PollinationsAudio.cs`, `PollinationsDemo.cs`) inside a Unity editor. They only use
+  long-stable APIs (`UnityWebRequest`, `UnityWebRequestMultimedia`, `Texture2D.LoadImage`,
+  `AudioClip.Create`), but they have not been compiled by Unity's compiler. The demo scene
+  YAML is likewise untested in-editor. If anything doesn't compile in your Unity version,
+  please open an issue.
 
 ---
 

@@ -19,7 +19,7 @@ namespace Pollinations.Unity
     public class ImageResult
     {
         public Texture2D Texture;
-        public byte[] PngBytes;
+        public byte[] ImageBytes;
         public string Model;
         public int Width;
         public int Height;
@@ -27,30 +27,6 @@ namespace Pollinations.Unity
 
     public sealed partial class PollinationsClient
     {
-        // ---------------- Text ----------------
-
-        /// <summary>POST /v1/chat/completions (OpenAI-compatible). Returns the assistant message plus usage.</summary>
-        public Task<TextResult> TextAsync(IList<ChatMessage> messages, string model = null, double? temperature = null, int? maxTokens = null)
-        {
-            var body = Internal.MiniJson.ToJson(BuildChatPayload(messages, model, temperature, maxTokens));
-            return SendJsonAsync("POST", GenBase + "/v1/chat/completions", body).ContinueWith(t =>
-            {
-                if (t.IsFaulted) throw t.Exception.InnerException ?? t.Exception;
-                return ParseChatResponse(t.Result);
-            }, TaskContinuationOptions.OnlyOnRanToCompletion);
-        }
-
-        /// <summary>One-shot convenience: system + user message → assistant reply.</summary>
-        public Task<TextResult> TextAsync(string systemPrompt, string userPrompt, string model = null)
-        {
-            var messages = new List<ChatMessage>
-            {
-                new ChatMessage("system", systemPrompt ?? ""),
-                new ChatMessage("user", userPrompt ?? "")
-            };
-            return TextAsync(messages, model);
-        }
-
         // ---------------- Image ----------------
 
         /// <summary>
@@ -84,40 +60,7 @@ namespace Pollinations.Unity
                 UnityEngine.Object.Destroy(tex);
                 throw new PollinationsException("Image bytes could not be decoded into a Texture2D.");
             }
-            return new ImageResult { Texture = tex, PngBytes = png, Model = model, Width = tex.width, Height = tex.height };
-        }
-
-        // ---------------- Speech ----------------
-
-        /// <summary>
-        /// POST /v1/audio/speech → binary audio. Default wav (always decodable in Unity);
-        /// pass mimeType "audio/mpeg" for mp3 and decode via PollinationsAudio.LoadClipAsync.
-        /// </summary>
-        public Task<SpeechResult> SpeechAsync(string text, string model = null, string voice = null, string mimeType = "audio/wav")
-        {
-            if (string.IsNullOrWhiteSpace(text))
-                return Task.FromException<SpeechResult>(new PollinationsException("SpeechAsync requires input text."));
-
-            var body = Internal.MiniJson.ToJson(BuildSpeechPayload(text, model, voice, mimeType));
-            var headers = Internal.PollinationsTransport.JsonHeaders(EffectiveToken, UserAgent, wantsBinary: true);
-            var usedModel = string.IsNullOrEmpty(model) ? SpeechModel : model;
-            var usedVoice = string.IsNullOrEmpty(voice) ? SpeechVoice : voice;
-
-            return Internal.PollinationsTransport.SendAsync(
-                new Internal.PollinationsRequest(GenBase + "/v1/audio/speech", "POST", body, headers),
-                Binary: true).ContinueWith(t =>
-            {
-                if (t.IsFaulted) throw t.Exception.InnerException ?? t.Exception;
-                var r = t.Result;
-                if (r.Status >= 400) throw PollinationsException.FromStatus((int)r.Status);
-                return new SpeechResult
-                {
-                    AudioBytes = r.Body,
-                    MimeType = string.IsNullOrEmpty(r.ContentType) ? mimeType : r.ContentType,
-                    Model = usedModel,
-                    Voice = usedVoice
-                };
-            }, TaskContinuationOptions.OnlyOnRanToCompletion);
+            return new ImageResult { Texture = tex, ImageBytes = png, Model = model, Width = tex.width, Height = tex.height };
         }
 
         /// <summary>Decode a WAV SpeechResult into an AudioClip (main thread). For mp3/other containers use PollinationsAudio.LoadClipAsync.</summary>
