@@ -17,7 +17,11 @@ namespace Pollinations.Unity
     public class PollinationsDemo : MonoBehaviour
     {
         [Header("Connection")]
-        [SerializeField] private string devApiKey = "";           // paste sk_ key here for dev, or use the device flow
+        // Dev-only key. Read from the POLLINATIONS_DEV_KEY environment variable
+        // (or set this field in code) so it is never serialized into the scene,
+        // a prefab, or a player build. Players use the device flow instead and
+        // pay with their own Pollen.
+        [NonSerialized] public string DevApiKey = "";
         [SerializeField] private string clientId = "";            // optional pk_ key for attribution
         [SerializeField] private TMP_Text statusLabel;
 
@@ -37,7 +41,12 @@ namespace Pollinations.Unity
 
         private void Awake()
         {
-            _client = new PollinationsClient { ApiKey = devApiKey };
+            // Dev key comes from the environment, never from a serialized field.
+            if (string.IsNullOrEmpty(DevApiKey))
+            {
+                DevApiKey = Environment.GetEnvironmentVariable("POLLINATIONS_DEV_KEY") ?? "";
+            }
+            _client = new PollinationsClient { ApiKey = DevApiKey };
         }
 
         private void OnDestroy()

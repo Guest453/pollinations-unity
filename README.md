@@ -111,6 +111,11 @@ Two authentication modes, selected automatically:
 | **Dev key** | `client.ApiKey = "sk_..."` (get one at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys)) | Your account |
 | **Device flow (BYOP)** | Leave `ApiKey` empty and run `PollinationsAuth` | The player's Pollen |
 
+> **Never ship a dev key.** Set `ApiKey` in code or from an environment variable
+> (the bundled demo reads `POLLINATIONS_DEV_KEY`), never in a serialized scene or
+> prefab field: Unity stores serialized strings in the scene asset and the player
+> build, so a pasted key would ship with the game. Players use the device flow.
+
 ### Device flow (BYOP)
 
 ```csharp
